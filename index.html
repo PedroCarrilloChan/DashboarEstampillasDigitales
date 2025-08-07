@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Lealtad Inteligente (Dinámico)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Un negro más profundo */
+            color: #F9FAFB;
+        }
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Coloca el fondo detrás de todo */
+        }
+        .card {
+            background-color: rgba(31, 41, 55, 0.8); /* Fondo semi-transparente */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid #374151;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            z-index: 10;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .kpi-value { font-weight: 800; color: #FFFFFF; }
+        .trend-up { color: #34D399; }
+        .trend-down { color: #F87171; }
+        .text-gradient { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .loader {
+            border: 4px solid #374151;
+            border-top: 4px solid #38bdf8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <!-- Contenedor para el fondo animado -->
+    <div id="particles-js"></div>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loader mx-auto"></div>
+            <p class="text-white text-lg mt-4">Cargando datos del dashboard...</p>
+        </div>
+    </div>
+
+    <div id="dashboard-content" class="max-w-7xl mx-auto relative z-10 opacity-0 transition-opacity duration-500">
+
+        <!-- Encabezado -->
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Dashboard de Lealtad Inteligente</h1>
+            <p class="text-lg text-gray-400 mt-1">
+                <span class="font-semibold">Cliente:</span> TechSolutions Inc. │ 
+                <span class="font-semibold">Periodo:</span> Julio 2025
+            </p>
+        </header>
+
+        <!-- Resumen Ejecutivo -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-gradient">📊 Resumen Ejecutivo: El Pulso del Programa</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card ROI -->
+                <div class="card">
+                    <p class="text-gray-400 font-medium">Retorno de la Inversión (ROI)</p>
+                    <p class="text-4xl kpi-value mt-2"><span id="roi_percentage">...</span>%</p>
+                    <p class="trend-up flex items-center mt-1 font-semibold" id="roi_trend_container">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" /></svg>
+                        +<span id="roi_trend_percentage">...</span>% vs Junio
+                    </p>
+                </div>
+                <!-- Card Miembros Activos -->
+                <div class="card">
+                    <p class="text-gray-400 font-medium">Miembros Totales Activos</p>
+                    <p class="text-4xl kpi-value mt-2" id="active_members">...</p>
+                    <p class="trend-up flex items-center mt-1 font-semibold" id="active_members_trend_container">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" /></svg>
+                        +<span id="active_members_trend_percentage">...</span>% vs Junio
+                    </p>
+                </div>
+                <!-- Card Ingreso Adicional -->
+                <div class="card">
+                    <p class="text-gray-400 font-medium">Ingreso Adicional Atribuible</p>
+                    <p class="text-4xl kpi-value mt-2">$<span id="attributable_revenue_k">...</span>K</p>
+                    <p class="trend-up flex items-center mt-1 font-semibold" id="attributable_revenue_trend_container">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" /></svg>
+                        +<span id="attributable_revenue_trend_percentage">...</span>% vs Junio
+                    </p>
+                </div>
+                <!-- Card Tasa de Retención -->
+                <div class="card">
+                    <p class="text-gray-400 font-medium">Tasa de Retención (Miembros)</p>
+                    <p class="text-4xl kpi-value mt-2"><span id="retention_rate_percentage">...</span>%</p>
+                    <p class="trend-up flex items-center mt-1 font-semibold" id="retention_rate_trend_container">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" /></svg>
+                        +<span id="retention_rate_trend_percentage">...</span>% vs Junio
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impacto Financiero -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-gradient">🚀 Impacto Financiero: Lealtad que Impulsa Ventas</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div class="card">
+                    <h3 class="font-semibold text-lg text-white">Ticket Promedio (AOV)</h3>
+                    <div class="h-48 mt-4">
+                        <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <rect id="aov_bar_members" y="35" width="25" height="65" fill="#38bdf8" x="20"/>
+                            <text id="aov_text_members" x="32.5" y="30" font-size="10" fill="#FFFFFF" text-anchor="middle">$...</text>
+                            <rect id="aov_bar_non_members" y="50" width="25" height="50" fill="#4b5563" x="55"/>
+                            <text id="aov_text_non_members" x="67.5" y="45" font-size="10" fill="#FFFFFF" text-anchor="middle">$...</text>
+                        </svg>
+                    </div>
+                    <p class="text-center mt-4 text-gray-400">Los miembros gastan un <span class="text-sky-400 font-bold" id="aov_comparison">...% más</span> por compra.</p>
+                </div>
+                <div class="card">
+                    <h3 class="font-semibold text-lg text-white">Frecuencia de Compra Mensual</h3>
+                    <div class="h-48 mt-4">
+                         <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <rect id="freq_bar_members" y="19" width="25" height="81" fill="#818cf8" x="20"/>
+                            <text id="freq_text_members" x="32.5" y="14" font-size="10" fill="#FFFFFF" text-anchor="middle">...x</text>
+                            <rect id="freq_bar_non_members" y="50" width="25" height="50" fill="#4b5563" x="55"/>
+                            <text id="freq_text_non_members" x="67.5" y="45" font-size="10" fill="#FFFFFF" text-anchor="middle">...x</text>
+                        </svg>
+                    </div>
+                    <p class="text-center mt-4 text-gray-400">Los miembros regresan un <span class="text-indigo-400 font-bold" id="freq_comparison">...% más</span> a menudo.</p>
+                </div>
+                 <div class="card">
+                    <h3 class="font-semibold text-lg text-white">Adopción del Pase Digital</h3>
+                    <div class="relative w-48 h-48 mt-4 mx-auto">
+                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#374151" stroke-width="3.8" />
+                            <path id="digital_pass_donut" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#818cf8" stroke-width="3.8" stroke-dasharray="0, 100" stroke-linecap="round" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-4xl font-extrabold text-white" id="digital_pass_adoption_percentage">...%</span>
+                            <span class="text-sm text-gray-400">Instalado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+        // --- CONFIGURACIÓN DEL FONDO ANIMADO ---
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {"value": 80, "density": {"enable": true, "value_area": 800}},
+                "color": {"value": "#4a5568"},
+                "shape": {"type": "circle"},
+                "opacity": {"value": 0.5, "random": true},
+                "size": {"value": 2, "random": true},
+                "line_linked": {"enable": true, "distance": 150, "color": "#4a5568", "opacity": 0.4, "width": 1},
+                "move": {"enable": true, "speed": 1, "direction": "none", "random": false, "straight": false, "out_mode": "out"}
+            },
+            "interactivity": {"detect_on": "canvas", "events": {"onhover": {"enable": true, "mode": "grab"}, "onclick": {"enable": false}}, "modes":{"grab":{"distance":140,"line_linked":{"opacity":1}}}},
+            "retina_detect": true
+        });
+
+        // --- LÓGICA PARA OBTENER Y MOSTRAR DATOS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // URL actualizada con tu dirección de Replit
+            const apiUrl = 'https://efd6ecb8-2ad8-4a93-b1aa-34f0bd3ce9b1-00-1oa0qvou9to3x.kirk.replit.dev/kpis';
+
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const dashboardContent = document.getElementById('dashboard-content');
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error de red: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateDashboard(data);
+                    // Ocultar el loader y mostrar el contenido
+                    loadingOverlay.style.display = 'none';
+                    dashboardContent.style.opacity = '1';
+                })
+                .catch(error => {
+                    console.error('Error al obtener los datos de la API:', error);
+                    loadingOverlay.innerHTML = `<p class="text-red-500 text-lg">Error al cargar los datos. Por favor, verifica la URL de la API y que el backend esté funcionando.</p>`;
+                });
+        });
+
+        function updateDashboard(data) {
+            // Actualizar Resumen Ejecutivo
+            document.getElementById('roi_percentage').textContent = data.roi_percentage;
+            document.getElementById('roi_trend_percentage').textContent = data.roi_trend_percentage;
+            document.getElementById('active_members').textContent = data.active_members.toLocaleString('es-MX');
+            document.getElementById('active_members_trend_percentage').textContent = data.active_members_trend_percentage;
+            document.getElementById('attributable_revenue_k').textContent = data.attributable_revenue_k;
+            document.getElementById('attributable_revenue_trend_percentage').textContent = data.attributable_revenue_trend_percentage;
+            document.getElementById('retention_rate_percentage').textContent = data.retention_rate_percentage;
+            document.getElementById('retention_rate_trend_percentage').textContent = data.retention_rate_trend_percentage;
+
+            // Actualizar Gráficos de Impacto Financiero
+            const aov_members = data.aov_members;
+            const aov_non_members = data.aov_non_members;
+            const max_aov = Math.max(aov_members, aov_non_members) * 1.2;
+
+            document.getElementById('aov_bar_members').setAttribute('height', (aov_members / max_aov) * 100);
+            document.getElementById('aov_bar_members').setAttribute('y', 100 - (aov_members / max_aov) * 100);
+            document.getElementById('aov_text_members').textContent = `$${aov_members.toFixed(0)}`;
+
+            document.getElementById('aov_bar_non_members').setAttribute('height', (aov_non_members / max_aov) * 100);
+            document.getElementById('aov_bar_non_members').setAttribute('y', 100 - (aov_non_members / max_aov) * 100);
+            document.getElementById('aov_text_non_members').textContent = `$${aov_non_members.toFixed(0)}`;
+
+            const aov_comp = ((aov_members / aov_non_members - 1) * 100).toFixed(0);
+            document.getElementById('aov_comparison').textContent = `${aov_comp}% más`;
+
+            // Gráfico de Frecuencia
+            const freq_members = data.purchase_freq_members;
+            const freq_non_members = data.purchase_freq_non_members;
+            const max_freq = Math.max(freq_members, freq_non_members) * 1.2;
+
+            document.getElementById('freq_bar_members').setAttribute('height', (freq_members / max_freq) * 100);
+            document.getElementById('freq_bar_members').setAttribute('y', 100 - (freq_members / max_freq) * 100);
+            document.getElementById('freq_text_members').textContent = `${freq_members.toFixed(1)}x`;
+
+            document.getElementById('freq_bar_non_members').setAttribute('height', (freq_non_members / max_freq) * 100);
+            document.getElementById('freq_bar_non_members').setAttribute('y', 100 - (freq_non_members / max_freq) * 100);
+            document.getElementById('freq_text_non_members').textContent = `${freq_non_members.toFixed(1)}x`;
+
+            const freq_comp = ((freq_members / freq_non_members - 1) * 100).toFixed(0);
+            document.getElementById('freq_comparison').textContent = `${freq_comp}% más`;
+
+            // Actualizar Donut de Adopción Digital
+            const adoption_percentage = data.digital_pass_adoption_percentage;
+            document.getElementById('digital_pass_adoption_percentage').textContent = `${adoption_percentage}%`;
+            document.getElementById('digital_pass_donut').style.strokeDasharray = `${adoption_percentage}, 100`;
+        }
+    </script>
+</body>
+</html>

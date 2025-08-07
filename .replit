@@ -1,19 +1,27 @@
-entrypoint = "main.py"
-modules = ["python-3.10:v18-20230807-322e88b"]
+# El lenguaje que estamos usando
+language = "python3"
+# El comando que se ejecutará cuando presiones "Run"
+# AÑADIMOS "poetry run" para ejecutar el comando dentro del entorno virtual
+run = "poetry run uvicorn main:app --host 0.0.0.0 --port 8000"
+modules = ["python-3.11"]
 
-[nix]
-channel = "stable-23_05"
+# Opcional: Esto le dice a Replit qué paquetes instalar
+[deployment]
+# También actualizamos aquí para consistencia
+run = ["sh", "-c", "poetry run uvicorn main:app --host 0.0.0.0 --port $PORT"]
 
-[unitTest]
+# Configuración para el gestor de paquetes UPM
+[packager]
 language = "python3"
 
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix"]
+[packager.features]
+# Habilita el gestor de paquetes Poetry
+guess_imports = true
+package_search = true
 
-[deployment]
-run = ["python3", "main.py"]
-deploymentTarget = "cloudrun"
+[nix]
+packages = ["libxcrypt", "psmisc"]
 
 [[ports]]
-localPort = 8080
+localPort = 8000
 externalPort = 80
