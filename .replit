@@ -1,13 +1,11 @@
 # El lenguaje que estamos usando
 language = "python3"
 # El comando que se ejecutará cuando presiones "Run"
-# AÑADIMOS "poetry run" para ejecutar el comando dentro del entorno virtual
-run = "poetry run uvicorn main:app --host 0.0.0.0 --port 8000"
+run = "poetry run uvicorn main:app --host 0.0.0.0 --port 5000 --reload"
 modules = ["python-3.11"]
 
-# Opcional: Esto le dice a Replit qué paquetes instalar
+# Configuración para deployment
 [deployment]
-# También actualizamos aquí para consistencia
 run = ["sh", "-c", "poetry run uvicorn main:app --host 0.0.0.0 --port $PORT"]
 
 # Configuración para el gestor de paquetes UPM
@@ -24,10 +22,6 @@ packages = ["libxcrypt", "psmisc"]
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 8000
 externalPort = 80
 
 [workflows]
