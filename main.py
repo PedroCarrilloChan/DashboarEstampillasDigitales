@@ -1,159 +1,134 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Estampillas Digitales</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #0d1117; /* Fondo oscuro */
-            color: #e5e7eb; /* Texto principal claro */
-        }
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 0;
-        }
-        .dashboard-container {
-            position: relative;
-            z-index: 1;
-        }
-        /* Efecto Glassmorphism */
-        .card { 
-            background-color: rgba(31, 41, 55, 0.6); /* Fondo semi-transparente */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 1rem; 
-            padding: 1.5rem; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            background-color: rgba(31, 41, 55, 0.8);
-        }
-        .kpi-title { color: #9ca3af; font-weight: 600; }
-        .kpi-value { color: #ffffff; font-weight: 800; font-size: 2.25rem; line-height: 2.5rem; }
-        .kpi-trend-up { color: #34d399; }
-        .kpi-trend-down { color: #f87171; }
-        .text-gradient {
-            background: linear-gradient(90deg, #38bdf8, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        /* Estilos para el calendario */
-        input[type="date"] {
-            background-color: rgba(31, 41, 55, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e5e7eb;
-            border-radius: 0.5rem;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-        }
-    </style>
-</head>
-<body class="p-4 sm:p-6">
+# main.py - Versión con Historial de Datos por Fecha
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from fastapi.responses import FileResponse
+import os
+from typing import Optional, Dict
+from datetime import date, timedelta
 
-    <div id="particles-js"></div>
+# --- Descripción de la API ---
+app = FastAPI(
+    title="API Dashboard de Estampillas con Historial",
+    description="Sirve los KPIs para un programa de lealtad, permitiendo consultas por fecha.",
+    version="4.0.0",
+)
 
-    <div id="dashboard-content" class="max-w-7xl mx-auto dashboard-container">
+# --- Configuración de CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-        <!-- Encabezado con Calendario -->
-        <header class="mb-8">
-            <div class="flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h1 class="text-3xl font-extrabold text-gradient">Dashboard de Lealtad por Estampillas</h1>
-                    <p class="text-lg text-gray-400 mt-1">Mostrando datos para: <span id="current_date_display" class="font-semibold text-gray-300"></span></p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="date" id="date_picker" class="p-2.5">
-                    <button id="fetch_button" class="bg-blue-600 text-white font-semibold rounded-lg p-2.5 hover:bg-blue-700 transition-colors">Consultar</button>
-                </div>
-            </div>
-        </header>
+# --- Modelos de Datos ---
+class KpiData(BaseModel):
+    total_members: int = 0
+    passes_installed: int = 0
+    android_installs: int = 0
+    iphone_installs: int = 0
+    recurring_customers_current_month: int = 0
+    stamps_given_current_month: int = 0
+    completed_cards_current_month: int = 0
+    acquisition_channels: Dict[str, int] = {}
+    redemption_rate_percentage: int = 0
+    avg_days_to_complete_card: int = 0
 
-        <!-- Fila de KPIs Principales -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div class="card">
-                <p class="kpi-title">Total de Miembros</p>
-                <p class="kpi-value" id="total_members">...</p>
-            </div>
-            <div class="card">
-                <p class="kpi-title">Pases Instalados</p>
-                <p class="kpi-value" id="passes_installed">...</p>
-            </div>
-            <div class="card">
-                <p class="kpi-title">Estampillas Dadas</p>
-                <p class="kpi-value" id="stamps_given">...</p>
-            </div>
-        </div>
+class KpiUpdate(BaseModel):
+    total_members: Optional[int] = None
+    passes_installed: Optional[int] = None
+    android_installs: Optional[int] = None
+    iphone_installs: Optional[int] = None
+    recurring_customers_current_month: Optional[int] = None
+    stamps_given_current_month: Optional[int] = None
+    completed_cards_current_month: Optional[int] = None
+    acquisition_channels: Optional[Dict[str, int]] = None
+    redemption_rate_percentage: Optional[int] = None
+    avg_days_to_complete_card: Optional[int] = None
 
-        <!-- Fila de Análisis de Clientes y Plataformas -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Clientes Recurrentes -->
-            <div class="card">
-                <p class="kpi-title mb-2">Clientes Recurrentes</p>
-                <div class="flex items-baseline">
-                    <p class="kpi-value" id="recurring_customers">...</p>
-                    <p class="ml-2 font-semibold" id="recurring_trend">...</p>
-                </div>
-                <p class="text-sm text-gray-400">Comparado con el mes pasado.</p>
-            </div>
-            <!-- Adopción -->
-            <div class="card flex flex-col justify-center">
-                <p class="kpi-title text-center mb-4">Tasa de Adopción de Pases</p>
-                <div class="relative w-40 h-40 mx-auto">
-                    <svg class="w-full h-full" viewBox="0 0 36 36">
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255, 255, 255, 0.1)" stroke-width="3.8" />
-                        <path id="adoption_donut" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3b82f6" stroke-width="3.8" stroke-dasharray="0, 100" stroke-linecap="round" />
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-3xl font-bold text-white" id="adoption_percentage">...%</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Plataformas -->
-            <div class="card">
-                <p class="kpi-title text-center mb-4">Desglose por Plataforma</p>
-                <div class="space-y-4">
-                    <div class="flex items-center">
-                        <p class="w-20 font-semibold text-gray-300">iPhone</p>
-                        <div class="w-full bg-gray-700 rounded-full h-4">
-                            <div id="iphone_bar" class="bg-gray-200 h-4 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="iphone_installs" class="w-16 text-right font-bold text-white">...</p>
-                    </div>
-                    <div class="flex items-center">
-                        <p class="w-20 font-semibold text-gray-300">Android</p>
-                        <div class="w-full bg-gray-700 rounded-full h-4">
-                            <div id="android_bar" class="bg-green-400 h-4 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p id="android_installs" class="w-16 text-right font-bold text-white">...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+# Modelo para la respuesta que incluye datos actuales y del mes pasado
+class KpiResponse(BaseModel):
+    current_data: KpiData
+    previous_month_data: KpiData
 
-        <!-- Fila de Canales y Rendimiento -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Canales de Adquisición -->
-            <div class="card">
-                <p class="kpi-title mb-4">Canales de Adquisición</p>
-                <div id="channels_container" class="space-y-3"></div>
-            </div>
-            <!-- Rendimiento del Programa -->
-            <div class="card">
-                 <p class="kpi-title mb-4">Rendimiento del Programa</p>
-                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                     <div>
-                         <p class="text-sm text-gray-400">Tarjetas Llenadas</p>
-                         <p class="text-2xl font-bold text-white" id="completed_cards">...
+# --- "Base de Datos" en Memoria con Historial ---
+# La clave es una fecha en formato string "YYYY-MM-DD"
+db: Dict[str, KpiData] = {}
+
+# Crear datos de ejemplo para hoy y el mes pasado para que el dashboard no se vea vacío al inicio
+today_str = date.today().isoformat()
+last_month_date = date.today() - timedelta(days=30)
+last_month_str = last_month_date.isoformat()
+
+db[today_str] = KpiData(
+    total_members=500, passes_installed=420, android_installs=150, iphone_installs=270,
+    recurring_customers_current_month=150, stamps_given_current_month=850,
+    completed_cards_current_month=75, acquisition_channels={"facebook": 120, "instagram": 200, "web": 80, "gloriafood": 100},
+    redemption_rate_percentage=45, avg_days_to_complete_card=25
+)
+db[last_month_str] = KpiData(
+    total_members=450, passes_installed=380, android_installs=130, iphone_installs=250,
+    recurring_customers_current_month=120, stamps_given_current_month=700,
+    completed_cards_current_month=60, acquisition_channels={"facebook": 100, "instagram": 180, "web": 70, "gloriafood": 30},
+    redemption_rate_percentage=40, avg_days_to_complete_card=28
+)
+
+
+# --- Endpoints de la API ---
+
+@app.get("/", response_class=FileResponse, tags=["Frontend"])
+async def read_index():
+    """
+    Este endpoint carga y devuelve el archivo index.html.
+    Es lo que verás cuando visites la URL principal.
+    """
+    index_path = os.path.join(os.path.dirname(__file__), "index.html")
+    if not os.path.exists(index_path):
+        raise HTTPException(status_code=404, detail="index.html not found")
+    return FileResponse(index_path)
+
+@app.get("/kpis", response_model=KpiResponse, tags=["API"])
+def get_kpis_for_date(query_date: str = date.today().isoformat()):
+    """
+    Obtiene los KPIs para una fecha específica y los compara con el mismo día del mes anterior.
+    """
+    try:
+        current_date_obj = date.fromisoformat(query_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Usar YYYY-MM-DD.")
+
+    # Calcular la fecha del mes anterior para comparación
+    previous_month_date_obj = current_date_obj - timedelta(days=30)
+    previous_month_date_str = previous_month_date_obj.isoformat()
+
+    # Obtener datos o usar un objeto vacío si no existen
+    current_data = db.get(query_date, KpiData())
+    previous_month_data = db.get(previous_month_date_str, KpiData())
+
+    return KpiResponse(current_data=current_data, previous_month_data=previous_month_data)
+
+@app.post("/update-kpis", response_model=KpiData, tags=["API"])
+def update_kpis(kpi_data: KpiUpdate, update_date: str = date.today().isoformat()):
+    """
+    Actualiza los KPIs para una fecha específica.
+    Si la fecha no existe, crea un nuevo registro.
+    """
+    global db
+
+    # Obtener el registro existente o crear uno nuevo si no existe
+    current_record = db.get(update_date, KpiData())
+    stored_data = current_record.model_dump()
+
+    update_data = kpi_data.model_dump(exclude_unset=True)
+
+    if "acquisition_channels" in update_data:
+        stored_data["acquisition_channels"].update(update_data["acquisition_channels"])
+        del update_data["acquisition_channels"]
+
+    stored_data.update(update_data)
+    db[update_date] = KpiData(**stored_data)
+
+    print(f"KPIs actualizados para la fecha {update_date}:", update_data)
+    return db[update_date]
