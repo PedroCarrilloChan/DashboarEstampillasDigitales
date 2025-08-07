@@ -76,4 +76,7 @@ def update_kpis(kpi_data: KpiData):
     print("KPIs actualizados:", db.model_dump_json(indent=2))
     return db
 
-# No necesitas uvicorn.run() si usas el comando de Replit
+# Para desarrollo local, agregar esto al final:
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000)
