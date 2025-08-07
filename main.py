@@ -10,7 +10,7 @@ import os
 app = FastAPI(
     title="API y Servidor de Dashboard de Lealtad",
     description="Sirve los KPIs y la interfaz del dashboard.",
-    version="2.0.0",
+    version="2.1.0", # Versión actualizada
 )
 
 # --- Configuración de CORS ---
@@ -39,6 +39,9 @@ class KpiData(BaseModel):
     digital_pass_adoption_percentage: int = 82
     chatbot_csat_score: float = 4.6
     chatbot_resolution_percentage: int = 93
+    # --- NUEVOS KPIs AÑADIDOS ---
+    android_installs: int = 1980
+    iphone_installs: int = 2870
 
 # --- "Base de Datos" en Memoria ---
 db = KpiData()
@@ -76,7 +79,4 @@ def update_kpis(kpi_data: KpiData):
     print("KPIs actualizados:", db.model_dump_json(indent=2))
     return db
 
-# Para desarrollo local, agregar esto al final:
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+# No necesitas uvicorn.run() si usas el comando de Replit
