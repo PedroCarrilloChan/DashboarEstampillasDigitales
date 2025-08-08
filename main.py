@@ -1,4 +1,4 @@
-# main.py - Versión con Base de Datos Persistente SQLite
+# main.py - Versión con la configuración de CORS corregida
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,7 +16,24 @@ DATABASE_FILE = "dashboard_data.db"
 app = FastAPI(
     title="API Dashboard de Estampillas con Base de Datos",
     description="Sirve los KPIs para un programa de lealtad usando una base de datos SQLite persistente.",
-    version="5.0.0",
+    version="5.1.0", # Versión actualizada
+)
+
+# --- Configuración de CORS ---
+# Orígenes permitidos. Aquí le damos permiso a tu dominio.
+origins = [
+    "https://dashboard.smartpasses.io",
+    # También puedes añadir orígenes de desarrollo si los necesitas
+    # "http://localhost",
+    # "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, # <-- Cambio clave: Usamos la lista de orígenes permitidos
+    allow_credentials=True,
+    allow_methods=["*"], # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"], # Permite todas las cabeceras
 )
 
 # --- Modelos de Datos (sin cambios) ---
@@ -49,9 +66,7 @@ class KpiResponse(BaseModel):
     previous_month_data: KpiData
 
 # --- Funciones de la Base de Datos ---
-
 def init_db():
-    """Crea la tabla de la base de datos si no existe."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("""
@@ -64,52 +79,35 @@ def init_db():
     conn.close()
 
 def get_kpis_from_db(record_date: str) -> KpiData:
-    """Obtiene los KPIs para una fecha específica desde la BD."""
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
     cursor.execute("SELECT data FROM kpi_history WHERE record_date = ?", (record_date,))
     row = cursor.fetchone()
     conn.close()
     if row:
-        # Si se encuentra un registro, se carga desde el JSON almacenado
         return KpiData(**json.loads(row[0]))
     else:
-        # Si no hay datos para esa fecha, devuelve un objeto vacío
         return KpiData()
 
 def update_kpis_in_db(record_date: str, update_data: KpiUpdate) -> KpiData:
-    """Actualiza (o inserta) los KPIs para una fecha específica en la BD."""
-    # Primero, obtiene el registro actual o uno vacío
     current_kpis = get_kpis_from_db(record_date)
     stored_data = current_kpis.model_dump()
-
-    # Fusiona los datos nuevos con los existentes
     new_data = update_data.model_dump(exclude_unset=True)
     if "acquisition_channels" in new_data:
         stored_data["acquisition_channels"].update(new_data.pop("acquisition_channels"))
     stored_data.update(new_data)
-
-    # Convierte el diccionario actualizado a un string JSON para guardarlo
     updated_json_data = json.dumps(stored_data)
-
-    # Guarda en la base de datos usando INSERT OR REPLACE
     conn = sqlite3.connect(DATABASE_FILE)
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT OR REPLACE INTO kpi_history (record_date, data)
-        VALUES (?, ?)
-    """, (record_date, updated_json_data))
+    cursor.execute("INSERT OR REPLACE INTO kpi_history (record_date, data) VALUES (?, ?)", (record_date, updated_json_data))
     conn.commit()
     conn.close()
-
     print(f"KPIs actualizados en BD para la fecha {record_date}:", new_data)
     return KpiData(**stored_data)
 
-# --- Endpoints de la API (ahora usan la BD) ---
-
+# --- Endpoints de la API ---
 @app.on_event("startup")
 async def startup_event():
-    """Se ejecuta una vez, cuando la aplicación inicia."""
     init_db()
 
 @app.get("/", response_class=FileResponse, tags=["Frontend"])
@@ -120,10 +118,8 @@ async def read_index():
 def get_kpis_for_date(query_date: str = date.today().isoformat()):
     current_date_obj = date.fromisoformat(query_date)
     previous_month_date_str = (current_date_obj - timedelta(days=30)).isoformat()
-
     current_data = get_kpis_from_db(query_date)
     previous_month_data = get_kpis_from_db(previous_month_date_str)
-
     return KpiResponse(current_data=current_data, previous_month_data=previous_month_data)
 
 @app.post("/update-kpis", response_model=KpiData, tags=["API"])
