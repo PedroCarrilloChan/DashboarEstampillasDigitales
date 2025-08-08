@@ -6,7 +6,6 @@
     <title>Dashboard de Estampillas Digitales</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Plugin para mostrar etiquetas en los gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,9 +152,11 @@
             "retina_detect": true
         });
 
-        const API_BASE_URL = 'https://efd6ecb8-2ad8-4a93-b1aa-34f0bd3ce9b1-00-1oa0qvou9to3x.kirk.replit.dev';
+        // --- CAMBIO CLAVE: URL Relativa ---
+        // Al dejarlo vacío, el navegador usará el dominio actual (dashboard.smartpasses.io)
+        const API_BASE_URL = ''; 
+
         let charts = {};
-        // Registrar el plugin de datalabels globalmente
         Chart.register(ChartDataLabels);
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -207,7 +208,6 @@
         }
 
         function updateDashboard(currentData, previousData) {
-            // --- Gráfico Principal Consolidado ---
             createOrUpdateChart('mainSummaryChart', {
                 type: 'bar',
                 data: {
@@ -257,7 +257,6 @@
                 }
             });
 
-            // --- Clientes Recurrentes ---
             animateValue(document.getElementById('recurring_customers'), 0, currentData.recurring_customers_current_month, 500);
             const trend = previousData.recurring_customers_current_month > 0 ? ((currentData.recurring_customers_current_month / previousData.recurring_customers_current_month) - 1) * 100 : (currentData.recurring_customers_current_month > 0 ? 100 : 0);
             const trendEl = document.getElementById('recurring_trend');
@@ -281,9 +280,8 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false } } } }
             });
 
-            // --- Plataformas con Números Visibles ---
             const platformContainer = document.getElementById('platform_container');
-            platformContainer.innerHTML = ''; // Limpiar
+            platformContainer.innerHTML = '';
             const platforms = { iPhone: currentData.iphone_installs, Android: currentData.android_installs };
             const totalInstalls = currentData.iphone_installs + currentData.android_installs;
             const platformColors = { iPhone: '#e5e7eb', Android: '#4ade80' };
@@ -303,7 +301,6 @@
                 platformContainer.appendChild(platformEl);
             }
 
-            // --- Canales de Adquisición ---
             const channelsContainer = document.getElementById('channels_container');
             channelsContainer.innerHTML = '';
             const channels = currentData.acquisition_channels;
@@ -329,7 +326,6 @@
                 }
             }
 
-            // --- Rendimiento del Programa ---
             animateValue(document.getElementById('completed_cards'), 0, currentData.completed_cards_current_month, 500);
             document.getElementById('redemption_rate').textContent = `${currentData.redemption_rate_percentage}%`;
             document.getElementById('avg_days').textContent = currentData.avg_days_to_complete_card;
